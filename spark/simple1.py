@@ -25,6 +25,11 @@ def workdcount(spark):
     sqlDF = spark.sql("SELECT name,age FROM people")
     sqlDF.show()
 
+    # http://spark.apache.org/docs/latest/sql-programming-guide.html#run-sql-on-files-directly
+    log.info('sql from file directly')
+    sqlDF = spark.sql(f"SELECT name,age FROM json.`{filename}`")
+    sqlDF.show()
+
     # as text
     df = spark.read.text(filename)
 
