@@ -8,12 +8,16 @@ from operator import add
 from pyspark.sql import SparkSession
 
 
-def workdcount(spark):
+def test1(spark):
     # refer to https://github.com/apache/spark/blob/master/examples/src/main/python/wordcount.py
     dirname = os.path.dirname(__file__)
     # http://spark.apache.org/docs/latest/sql-programming-guide.html#creating-dfs
     filename = os.path.join(dirname, './resources/person.json')
+    log.info('load json')
     df = spark.read.json(filename)
+    df.show()
+    # or
+    df = spark.read.load(filename, format="json")
     df.show()
     log.info(f'there are {df.count()} rows')
     # Select everybody, but increment the age by 1
@@ -41,6 +45,27 @@ def workdcount(spark):
     for (word, count) in output:
         log.info(f'{word} -- {count}')
 
+    # now json
+    # http: // spark.apache.org/docs/latest/sql-programming-guide.html  # json-datasets
+    log.info(f'json again')
+    df = spark.read.json(filename)
+    df.printSchema()
+    df.show()
+
+    # Alternatively, a DataFrame can be created for a JSON dataset represented by
+    # an RDD[String] storing one JSON object per string
+    sc = spark.sparkContext
+    jsonStrings = [
+        '{"name":"Yin","address":{"city":"Columbus","state":"Ohio"}}']
+    otherPeopleRDD = sc.parallelize(jsonStrings)
+    otherPeople = spark.read.json(otherPeopleRDD)
+    otherPeople.show()
+
+
+def testJdbc():
+    # TODO: http://spark.apache.org/docs/latest/sql-programming-guide.html#jdbc-to-other-databases
+    pass
+
 
 if __name__ == "__main__":
     spark = SparkSession\
@@ -48,6 +73,6 @@ if __name__ == "__main__":
         .appName("SimpleExample1")\
         .getOrCreate()
 
-    workdcount(spark)
+    test1(spark)
 
     spark.stop()
