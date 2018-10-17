@@ -11,10 +11,24 @@ from pyspark.sql import SparkSession
 def workdcount(spark):
     # refer to https://github.com/apache/spark/blob/master/examples/src/main/python/wordcount.py
     dirname = os.path.dirname(__file__)
+    # http://spark.apache.org/docs/latest/sql-programming-guide.html#creating-dfs
     filename = os.path.join(dirname, './resources/person.json')
-    dataframe = spark.read.text(filename)
-    log.info(f'there are {dataframe.count()} rows')
-    lines = dataframe.rdd.map(lambda r: r[0])
+    df = spark.read.json(filename)
+    df.show()
+    log.info(f'there are {df.count()} rows')
+    # Select everybody, but increment the age by 1
+    df.select(df['name'],
+              df['age'], df['age'] + 1).show()
+
+    df.createOrReplaceTempView("people")
+
+    sqlDF = spark.sql("SELECT name,age FROM people")
+    sqlDF.show()
+
+    # as text
+    df = spark.read.text(filename)
+
+    lines = df.rdd.map(lambda r: r[0])
     counts = lines.flatMap(lambda x: x.split(' ')) \
                   .map(lambda x: (x, 1)) \
                   .reduceByKey(add)
