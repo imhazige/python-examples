@@ -62,17 +62,37 @@ def test1(spark):
     otherPeople.show()
 
 
-def testJdbc():
-    # TODO: http://spark.apache.org/docs/latest/sql-programming-guide.html#jdbc-to-other-databases
-    pass
+def testJdbc(spark):
+    # make sure you have a local postgres database testpy and a table sparktest
+    # 
+    jdbcDF = spark.read \
+    .format("jdbc") \
+    .option("url", "jdbc:postgresql://localhost:5432/testpy")\
+    .option("dbtable", "sparktest") \
+    .option("user", "postgres") \
+    .option("password", "postgres") \
+    .load()
+
+    # can not do this
+    # jdbcDF = spark.sql(f"SELECT * from sparktest")
+    jdbcDF.show()
+
+
 
 
 if __name__ == "__main__":
+    # TODO: http://spark.apache.org/docs/latest/sql-programming-guide.html#jdbc-to-other-databases
+    dirname = os.path.dirname(__file__)
+    # http://spark.apache.org/docs/latest/sql-programming-guide.html#creating-dfs
+    # //load the jdbc driver
+    jarname = os.path.join(dirname, './postgresql-42.2.5.jar')
     spark = SparkSession\
         .builder\
         .appName("SimpleExample1")\
+        .config('spark.driver.extraClassPath',jarname)\
         .getOrCreate()
 
-    test1(spark)
+    # test1(spark)
+    testJdbc(spark)
 
     spark.stop()
