@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 pyspark = {version = "*", extras = ["sql"]}
 pandas = "*"
+numpy = "*"
 
 [dev-packages]
 
