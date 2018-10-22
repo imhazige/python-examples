@@ -4,6 +4,8 @@ import sys
 import os
 import log
 from operator import add
+import numpy as np
+import pandas as pd
 
 from pyspark.sql import SparkSession
 
@@ -63,25 +65,43 @@ def test1(spark):
 
 
 def testJdbc(spark):
+    dirname = os.path.dirname(__file__)
+    # http://spark.apache.org/docs/latest/sql-programming-guide.html#creating-dfs
+    # //load the jdbc driver
+    jarname = os.path.join(dirname, './postgresql-42.2.5.jar')
+    spark.conf.set('spark.driver.extraClassPath', jarname)
+    # spark.conf.set("spark.sql.execution.arrow.enabled", "true")
     # make sure you have a local postgres database testpy and a table sparktest
-    # 
+    #
     jdbcDF = spark.read \
-    .format("jdbc") \
-    .option("url", "jdbc:postgresql://localhost:5432/testpy")\
-    .option("dbtable", "sparktest") \
-    .option("user", "postgres") \
-    .option("password", "postgres") \
-    .load()
+        .format("jdbc") \
+        .option("url", "jdbc:postgresql://localhost:5432/testpy")\
+        .option("dbtable", "sparktest") \
+        .option("user", "postgres") \
+        .option("password", "postgres") \
+        .load()
 
     # can not do this
     # jdbcDF = spark.sql(f"SELECT * from sparktest")
     jdbcDF.show()
 
 
+def testArrowPandas(spark):
+    # Enable Arrow-based columnar data transfers
+    spark.conf.set("spark.sql.execution.arrow.enabled", "true")
+
+    # Generate a Pandas DataFrame
+    pdf = pd.DataFrame(np.random.rand(100, 3))
+
+    # Create a Spark DataFrame from a Pandas DataFrame using Arrow
+    df = spark.createDataFrame(pdf)
+
+    # Convert the Spark DataFrame back to a Pandas DataFrame using Arrow
+    result_pdf = df.select("*").toPandas()
 
 
 if __name__ == "__main__":
-    # TODO: http://spark.apache.org/docs/latest/sql-programming-guide.html#jdbc-to-other-databases
+    # http://spark.apache.org/docs/latest/sql-programming-guide.html#jdbc-to-other-databases
     dirname = os.path.dirname(__file__)
     # http://spark.apache.org/docs/latest/sql-programming-guide.html#creating-dfs
     # //load the jdbc driver
@@ -89,10 +109,11 @@ if __name__ == "__main__":
     spark = SparkSession\
         .builder\
         .appName("SimpleExample1")\
-        .config('spark.driver.extraClassPath',jarname)\
+        .config('_spark.driver.extraClassPath', jarname)\
         .getOrCreate()
 
     # test1(spark)
-    testJdbc(spark)
+    # testJdbc(spark)
+    testArrowPandas(spark)
 
     spark.stop()
