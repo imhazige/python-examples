@@ -69,6 +69,7 @@ def testJdbc(spark):
     # http://spark.apache.org/docs/latest/sql-programming-guide.html#creating-dfs
     # //load the jdbc driver
     jarname = os.path.join(dirname, './postgresql-42.2.5.jar')
+    # set at here did not work
     spark.conf.set('spark.driver.extraClassPath', jarname)
     # spark.conf.set("spark.sql.execution.arrow.enabled", "true")
     # make sure you have a local postgres database testpy and a table sparktest
@@ -95,9 +96,11 @@ def testArrowPandas(spark):
 
     # Create a Spark DataFrame from a Pandas DataFrame using Arrow
     df = spark.createDataFrame(pdf)
+    df.show()
 
     # Convert the Spark DataFrame back to a Pandas DataFrame using Arrow
     result_pdf = df.select("*").toPandas()
+    log.info(f'pandas-- {result_pdf}')
 
 
 if __name__ == "__main__":
@@ -109,7 +112,7 @@ if __name__ == "__main__":
     spark = SparkSession\
         .builder\
         .appName("SimpleExample1")\
-        .config('_spark.driver.extraClassPath', jarname)\
+        .config('spark.driver.extraClassPath', jarname)\
         .getOrCreate()
 
     # test1(spark)
