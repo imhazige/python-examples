@@ -6,6 +6,8 @@ import log
 from operator import add
 import numpy as np
 import pandas as pd
+from pyspark.sql.functions import col, pandas_udf
+from pyspark.sql.types import LongType
 
 from pyspark.sql import SparkSession
 
@@ -101,6 +103,27 @@ def testArrowPandas(spark):
     # Convert the Spark DataFrame back to a Pandas DataFrame using Arrow
     result_pdf = df.select("*").toPandas()
     log.info(f'pandas-- {result_pdf}')
+
+    # Scalar test
+    # http://spark.apache.org/docs/latest/sql-programming-guide.html#scalar
+    def multiply_func(x, y):
+        return x * y
+    multiply = pandas_udf(multiply_func, returnType=LongType())
+
+    # The function for a pandas_udf should be able to execute with local Pandas data
+    x = pd.Series([1, 2, 3])
+    log.info(f'multiply_func(x, x) \n x = {x} \n {multiply_func(x, x)}')
+    # 0    1
+    # 1    4
+    # 2    9
+    # dtype: int64
+
+    # Create a Spark DataFrame, 'spark' is an existing SparkSession
+    df = spark.createDataFrame(pd.DataFrame(x, columns=["x"]))
+
+    log.info(f'df before {df.show()}')
+    # Execute function as a Spark vectorized UDF
+    df.select(multiply(col("x"), col("x"))).show()
 
 
 if __name__ == "__main__":
