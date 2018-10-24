@@ -6,7 +6,7 @@ import log
 from operator import add
 import numpy as np
 import pandas as pd
-from pyspark.sql.functions import col, pandas_udf
+from pyspark.sql.functions import col, pandas_udf, PandasUDFType
 from pyspark.sql.types import LongType
 
 from pyspark.sql import SparkSession
@@ -124,6 +124,21 @@ def testArrowPandas(spark):
     log.info(f'df before {df.show()}')
     # Execute function as a Spark vectorized UDF
     df.select(multiply(col("x"), col("x"))).show()
+
+    # groupmap
+    # http://spark.apache.org/docs/latest/sql-programming-guide.html#grouped-map
+    df = spark.createDataFrame(
+        [(1, 1.0), (1, 2.0), (2, 3.0), (2, 5.0), (2, 10.0)],
+        ("id", "v"))
+
+    @pandas_udf("id long, v double", PandasUDFType.GROUPED_MAP)
+    def substract_mean(pdf):
+        # pdf is a pandas.DataFrame not spark dataframe, can not use show
+        v = pdf.v
+        log.info(f'grouped {pdf}')
+        return pdf.assign(v=v - v.mean())
+
+    df.groupby("id").apply(substract_mean).show()
 
 
 if __name__ == "__main__":
